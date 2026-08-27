@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realize Festas — Painel</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; min-height: 100vh; padding: 1rem; color: #1a1a1a; }
+.app { max-width: 760px; margin: 0 auto; background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+.header { text-align: center; padding: 0.5rem 0 1rem; border-bottom: 1px solid #eee; margin-bottom: 1.5rem; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header p { font-size: 12px; color: #888; margin-top: 3px; }
+
+.sec { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin: 1.4rem 0 0.7rem; }
+.sec:first-of-type { margin-top: 0.4rem; }
+.mes-header { font-size: 13px; font-weight: 700; color: #1D9E75; text-transform: capitalize; margin: 1.2rem 0 0.5rem; padding-bottom: 4px; border-bottom: 1px solid #E1F5EE; }
+.mes-header:first-child { margin-top: 0.2rem; }
+.field { margin-bottom: 0.9rem; }
+.field label { display: block; font-size: 13px; color: #555; margin-bottom: 3px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 12px; font-size: 14px;
+  border: 1px solid #ddd; border-radius: 8px;
+  background: white; color: #1a1a1a;
+  font-family: inherit;
+}
+.field input:focus { outline: none; border-color: #1D9E75; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+.btn { padding: 12px; font-size: 14px; font-weight: 600; border-radius: 10px; cursor: pointer; border: none; transition: opacity 0.2s; }
+.btn-g { background: #1D9E75; color: white; }
+.btn-s { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+.btn-d { background: #fdecec; color: #c0392b; border: 1px solid #f3c6c6; }
+.btn:active { opacity: 0.85; }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 10px; font-size: 12.5px; border-radius: 8px; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 1.2rem; }
+.tab-btn { flex: 1; padding: 9px 4px; font-size: 12.5px; font-weight: 600; border-radius: 10px; border: 1px solid #ddd; background: #fafafa; color: #666; cursor: pointer; }
+.tab-btn.on { background: #1D9E75; color: white; border-color: #1D9E75; }
+
+.tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.tag-fechado { background: #fdecec; color: #c0392b; }
+.tag-pendente { background: #fff6e0; color: #a6740a; }
+.tag-manual { background: #eaeaea; color: #555; }
+.tag-pago { background: #e1f5ee; color: #0f6e56; }
+.tag-devendo { background: #fff6e0; color: #a6740a; }
+
+/* Resumo topo */
+.resumo-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0.6rem; }
+.resumo-card { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 0.9rem 1rem; }
+.resumo-card .num { font-size: 22px; font-weight: 700; color: #1D9E75; }
+.resumo-card .lbl { font-size: 11.5px; color: #888; margin-top: 2px; }
+.proximo-item { display: flex; justify-content: space-between; font-size: 12.5px; padding: 7px 0; border-bottom: 1px solid #f2f2f2; }
+.proximo-item:last-child { border-bottom: none; }
+
+/* Calendário */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+.cal-nav button { background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; }
+.cal-nav span { font-size: 14px; font-weight: 600; text-transform: capitalize; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 0.5rem; }
+.cal-dow { text-align: center; font-size: 10px; color: #999; font-weight: 600; padding-bottom: 4px; }
+.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12.5px; cursor: pointer; border: 1px solid #eee; background: #fafafa; color: #333; position: relative; }
+.cal-day.empty { visibility: hidden; cursor: default; }
+.cal-day.livre:hover { border-color: #1D9E75; }
+.cal-day.fechado { background: #fdecec; color: #c0392b; border-color: #f3c6c6; font-weight: 600; }
+.cal-day.hoje { box-shadow: inset 0 0 0 2px #1D9E75; }
+.legenda { display: flex; gap: 14px; font-size: 11px; color: #666; margin-bottom: 0.4rem; }
+.legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.legenda i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.resultado-box { background: #f0faf6; border: 1px solid #b2dfcf; border-radius: 10px; padding: 0.9rem 1.1rem; font-size: 13px; line-height: 1.6; margin: 0.6rem 0 1rem; display: none; }
+.resultado-box.fechado { background: #fdecec; border-color: #f3c6c6; }
+.resultado-box.v { display: block; }
+
+/* Lista de contratos */
+.contrato-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid #eee; cursor: pointer; gap: 10px; }
+.contrato-item:hover { background: #fafafa; }
+.contrato-item .info b { font-size: 13.5px; display: block; }
+.contrato-item .info span { font-size: 11.5px; color: #888; }
+.contrato-item .tagcol { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.busca-contrato { margin-bottom: 0.8rem; }
+.empty-state { text-align: center; color: #999; font-size: 13px; padding: 2rem 0; }
+
+/* Slots do dia */
+.slot-card { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.6rem; }
+.slot-card .slot-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.slot-card .slot-hora { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+.slot-card .slot-desc { font-size: 12.5px; color: #555; margin-bottom: 8px; }
+.slot-btns { display: flex; gap: 6px; }
+.slot-btns .btn { flex: 1; }
+
+/* Modal */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
+.modal.v { display: flex; }
+.modal-content { background: white; border-radius: 14px; max-width: 480px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.4rem; position: relative; }
+.modal-close { position: absolute; top: 10px; right: 10px; background: #f5f5f5; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+.modal-content h3 { font-size: 16px; margin-bottom: 0.9rem; padding-right: 1.6rem; }
+.modal-row { font-size: 13px; margin-bottom: 8px; line-height: 1.5; }
+.modal-row b { color: #555; display: inline-block; min-width: 118px; }
+.modal-sec { font-size: 11px; font-weight: 700; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.4rem; }
+.link-box { display: flex; gap: 6px; margin-top: 0.4rem; }
+.link-box input { flex: 1; font-size: 11px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
+.pagto-hist { font-size: 12px; color: #666; padding: 5px 0; border-bottom: 1px solid #f2f2f2; display: flex; justify-content: space-between; }
+
+.resumo-periodo-item { border-bottom: 1px solid #eee; padding: 10px 2px; font-size: 13px; }
+.resumo-periodo-item b { display: block; font-size: 13.5px; }
+.resumo-periodo-item span { font-size: 11.5px; color: #888; }
+
+#s-gate { max-width: 320px; margin: 2rem auto; text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🗂️ Painel Realize Festas e Eventos</h1>
+    <p>Agenda e contratos</p>
+  </div>
+
+  <!-- ACESSO -->
+  <div id="s-gate">
+    <div class="field"><label>Senha de acesso</label><input id="senha" type="password" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')entrar()"></div>
+    <button class="btn btn-g btn-full" onclick="entrar()">Entrar</button>
+    <p id="erroSenha" style="color:#c0392b;font-size:12px;margin-top:8px;display:none;">Senha incorreta.</p>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="s-painel" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn on" id="tabBtnResumo" onclick="mostrarTab('resumo')">🏠 Início</button>
+      <button class="tab-btn" id="tabBtnAgenda" onclick="mostrarTab('agenda')">📅 Agenda</button>
+      <button class="tab-btn" id="tabBtnContratos" onclick="mostrarTab('contratos')">📋 Contratos</button>
+      <button class="tab-btn" id="tabBtnRelatorio" onclick="mostrarTab('relatorio')">📊 Relatório</button>
+    </div>
+
+    <!-- TAB RESUMO -->
+    <div id="tab-resumo">
+      <div class="sec">Este mês</div>
+      <div class="resumo-cards">
+        <div class="resumo-card"><div class="num" id="rsFestasMes">0</div><div class="lbl">Festas fechadas no mês</div></div>
+        <div class="resumo-card"><div class="num" id="rsFaturamentoMes">R$ 0</div><div class="lbl">Faturamento (contratos fechados)</div></div>
+      </div>
+      <div class="sec">Próximos eventos</div>
+      <div id="rsProximos"></div>
+    </div>
+
+    <!-- TAB AGENDA -->
+    <div id="tab-agenda" style="display:none;">
+      <div class="sec">Consultar disponibilidade</div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;"><input id="buscaData" type="date"></div>
+        <button class="btn btn-s" onclick="consultarData()">Consultar</button>
+      </div>
+      <div id="resultadoBusca" class="resultado-box"></div>
+
+      <div class="sec">Calendário</div>
+      <div class="legenda">
+        <span><i style="background:#fdecec;border:1px solid #f3c6c6;"></i>Tem evento/bloqueio</span>
+        <span><i style="background:#fafafa;border:1px solid #eee;"></i>Disponível</span>
+      </div>
+      <div class="cal-nav">
+        <button onclick="mudarMes(-1)">‹</button>
+        <span id="mesAtual"></span>
+        <button onclick="mudarMes(1)">›</button>
+      </div>
+      <div class="calendar-grid" id="calDow"></div>
+      <div class="calendar-grid" id="calendario"></div>
+
+      <div class="sec">Fechar horário manualmente (sem contrato)</div>
+      <div id="formBloqueio">
+        <div class="row2">
+          <div class="field"><label>Data</label><input id="bloqData" type="date"></div>
+          <div class="field"><label>Nome do cliente (opcional)</label><input id="bloqNome" type="text" placeholder="Ex: reserva particular"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Horário início</label><input id="bloqHinicio" type="time"></div>
+          <div class="field"><label>Horário fim</label><input id="bloqHfim" type="time"></div>
+        </div>
+        <div class="field"><label>Evento / motivo</label><input id="bloqEvento" type="text" placeholder="Ex: manutenção, aniversário particular..."></div>
+        <div class="row2">
+          <div class="field"><label>Pagantes (opcional)</label><input id="bloqPagantes" type="number" placeholder="Ex: 40"></div>
+          <div class="field"><label>Valor (opcional)</label><input id="bloqValor" type="number" placeholder="Ex: 3000"></div>
+        </div>
+        <div class="field"><label>Cardápio (opcional)</label><input id="bloqCardapio" type="text" placeholder="Ex: churrasco completo"></div>
+        <div class="field"><label>Observações (opcional)</label><textarea id="bloqObs" placeholder="Alguma observação..."></textarea></div>
+      </div>
+      <button class="btn btn-g btn-full" onclick="fecharDataManual()">Fechar este horário</button>
+    </div>
+
+    <!-- TAB CONTRATOS -->
+    <div id="tab-contratos" style="display:none;">
+      <div class="sec">Todos os contratos</div>
+      <div class="field busca-contrato"><input id="buscaContrato" type="text" placeholder="Buscar por nome, evento ou data..." oninput="renderContratos()"></div>
+      <div id="listaContratos"></div>
+    </div>
+
+    <!-- TAB RELATÓRIO -->
+    <div id="tab-relatorio" style="display:none;">
+      <div class="sec">Resumo por período</div>
+      <div class="row2">
+        <div class="field"><label>De</label><input id="relDe" type="date"></div>
+        <div class="field"><label>Até</label><input id="relAte" type="date"></div>
+      </div>
+      <button class="btn btn-g btn-full" onclick="gerarResumoPeriodo()">Gerar resumo</button>
+      <div id="resumoPeriodo" style="margin-top:1rem;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALHES DO DIA -->
+  <div class="modal" id="modalDia">
+    <div class="modal-content">
+      <button class="modal-close" onclick="fecharModal('modalDia')">✕</button>
+      <div id="modalDiaBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CONTRATO -->
+  <div class="modal" id="modalContrato">
+    <div class="modal-content">
+      <button class="modal-close" onclick="fecharModal('modalContrato')">✕</button>
+      <div id="modalContratoBody"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCju3LRA5CTpUcIpkY7gNpw_rpiGb9WMSo",
+  authDomain: "realize-contrato-e0998.firebaseapp.com",
+  databaseURL: "https://realize-contrato-e0998-default-rtdb.firebaseio.com",
+  projectId: "realize-contrato-e0998",
+  storageBucket: "realize-contrato-e0998.firebasestorage.app",
+  messagingSenderId: "733550691411",
+  appId: "1:733550691411:web:90dd28105730c867cdb2a6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Ajuste aqui o nome do arquivo do formulário de contrato, caso seja diferente:
+const ARQUIVO_CONTRATO = "index.html";
+
+// Senha simples de acesso ao painel (proteção básica de tela — troque à vontade).
+// A segurança real dos dados deve ser garantida pelas regras do Firebase.
+const SENHA_PAINEL = "349";
+
+let contratosCache = {};
+let agendaCache = {};
+let mesRef = new Date(); mesRef.setDate(1);
+
+function fdata(v){ if(!v)return'—'; const[y,m,d]=v.split('-'); return`${d}/${m}/${y}`; }
+function fval(v){ if(!v||isNaN(v))return'—'; return'R$ '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+function hojeISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function horariosConflitam(aIni,aFim,bIni,bFim){
+  if(!aIni||!aFim||!bIni||!bFim) return true;
+  return aIni<bFim && bIni<aFim;
+}
+// Normaliza um nó agenda/{data}, que pode estar no formato antigo (objeto único)
+// ou novo (mapa de slots por horário)
+function slotsDoDia(raw){
+  if(!raw) return [];
+  if(raw.tipo) return [{slotId:'legacy', ...raw}];
+  return Object.entries(raw).map(([slotId,v])=>({slotId,...v}));
+}
+
+// ---------- Acesso ----------
+window.entrar = function(){
+  const v = document.getElementById('senha').value;
+  if(v === SENHA_PAINEL){
+    sessionStorage.setItem('painelOk','1');
+    document.getElementById('s-gate').style.display='none';
+    document.getElementById('s-painel').style.display='block';
+    iniciar();
+  } else {
+    document.getElementById('erroSenha').style.display='block';
+  }
+}
+if(sessionStorage.getItem('painelOk')==='1'){
+  document.getElementById('s-gate').style.display='none';
+  document.getElementById('s-painel').style.display='block';
+  iniciar();
+}
+
+function iniciar(){
+  onValue(ref(db,'contratos'), snap=>{ contratosCache = snap.val()||{}; renderContratos(); renderCalendario(); renderResumo(); });
+  onValue(ref(db,'agenda'), snap=>{ agendaCache = snap.val()||{}; renderCalendario(); });
+}
+
+// ---------- Tabs ----------
+window.mostrarTab = function(nome){
+  ['resumo','agenda','contratos','relatorio'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===nome ? 'block':'none';
+    document.getElementById('tabBtn'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('on', t===nome);
+  });
+}
+
+// ---------- Resumo (Início) ----------
+function renderResumo(){
+  const hoje = hojeISO();
+  const mesAtualKey = hoje.slice(0,7);
+  const fechados = Object.values(contratosCache).filter(d=>d.status==='fechado');
+  const doMes = fechados.filter(d=> (d.data||'').startsWith(mesAtualKey));
+  document.getElementById('rsFestasMes').textContent = doMes.length;
+  const faturamento = doMes.reduce((s,d)=> s + (parseFloat(d.cValor||d.valor)||0), 0);
+  document.getElementById('rsFaturamentoMes').textContent = fval(faturamento);
+
+  const proximos = Object.values(contratosCache)
+    .filter(d=> d.data && d.data>=hoje)
+    .sort((a,b)=> a.data.localeCompare(b.data))
+    .slice(0,6);
+  const el = document.getElementById('rsProximos');
+  if(proximos.length===0){
+    el.innerHTML = `<div class="empty-state">Nenhum evento futuro cadastrado.</div>`;
+  } else {
+    el.innerHTML = proximos.map(d=>`
+      <div class="proximo-item">
+        <span>${fdata(d.data)} — ${d.nome||'—'} (${d.evento||'—'})</span>
+        <span>${d.status==='fechado' ? '<span class="tag tag-fechado">Fechado</span>' : '<span class="tag tag-pendente">Pendente</span>'}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ---------- Consulta de disponibilidade ----------
+window.consultarData = function(){
+  const data = document.getElementById('buscaData').value;
+  const box = document.getElementById('resultadoBusca');
+  if(!data){ box.classList.remove('v'); return; }
+  const slots = slotsDoDia(agendaCache[data]);
+  box.classList.add('v');
+  if(slots.length>0){
+    box.classList.add('fechado');
+    box.innerHTML = `🔴 <b>Data ${fdata(data)} tem ${slots.length} horário(s) ocupado(s):</b><br>` +
+      slots.map(s=>{
+        const desc = s.tipo==='contrato'
+          ? `${s.nome||'—'} — ${s.evento||'—'}`
+          : (s.evento||s.motivo||'Bloqueio manual');
+        return `${s.hinicio||'?'} às ${s.hfim||'?'} — ${desc}`;
+      }).join('<br>');
+  } else {
+    box.classList.remove('fechado');
+    box.innerHTML = `🟢 <b>Data ${fdata(data)} está totalmente disponível.</b>`;
+  }
+}
+
+// ---------- Calendário ----------
+const DOWS = ['D','S','T','Q','Q','S','S'];
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function montarCabecalhoDow(){
+  document.getElementById('calDow').innerHTML = DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+}
+montarCabecalhoDow();
+
+window.mudarMes = function(delta){
+  mesRef.setMonth(mesRef.getMonth()+delta);
+  renderCalendario();
+}
+
+function renderCalendario(){
+  document.getElementById('mesAtual').textContent = `${MESES[mesRef.getMonth()]} de ${mesRef.getFullYear()}`;
+  const el = document.getElementById('calendario');
+  const ano = mesRef.getFullYear(), mes = mesRef.getMonth();
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  const hoje = hojeISO();
+
+  let html = '';
+  for(let i=0;i<primeiroDia;i++) html += `<div class="cal-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const mm = String(mes+1).padStart(2,'0');
+    const dd = String(dia).padStart(2,'0');
+    const iso = `${ano}-${mm}-${dd}`;
+    const slots = slotsDoDia(agendaCache[iso]);
+    const classes = ['cal-day', slots.length>0?'fechado':'livre', iso===hoje?'hoje':''].join(' ');
+    html += `<div class="${classes}" onclick="clicarDia('${iso}')">${dia}</div>`;
+  }
+  el.innerHTML = html;
+}
+
+window.clicarDia = function(iso){
+  const slots = slotsDoDia(agendaCache[iso]);
+  const body = document.getElementById('modalDiaBody');
+  let html = `<h3>📅 ${fdata(iso)}</h3>`;
+  if(slots.length===0){
+    html += `<div class="modal-row">Nenhum evento ou bloqueio nesta data.</div>
+      <button class="btn btn-g btn-full" style="margin-top:10px;" onclick="fecharModal('modalDia');prepararBloqueio('${iso}')">Fechar um horário nesta data</button>`;
+  } else {
+    slots.sort((a,b)=>(a.hinicio||'').localeCompare(b.hinicio||''));
+    html += slots.map(s=>{
+      const tag = s.tipo==='contrato' ? '<span class="tag tag-fechado">Contrato</span>' : '<span class="tag tag-manual">Bloqueio manual</span>';
+      const desc = s.tipo==='contrato'
+        ? `${s.nome||'—'} — ${s.evento||'—'}`
+        : (s.evento||s.motivo||'Bloqueio manual');
+      const botaoVer = s.tipo==='contrato'
+        ? `<button class="btn btn-s btn-sm" onclick="fecharModal('modalDia');abrirContrato('${s.contratoId}')">Ver contrato</button>`
+        : '';
+      return `
+        <div class="slot-card">
+          <div class="slot-top"><span class="slot-hora">${s.hinicio||'—'} às ${s.hfim||'—'}</span>${tag}</div>
+          <div class="slot-desc">${desc}</div>
+          <div class="slot-btns">
+            ${botaoVer}
+            <button class="btn btn-s btn-sm" onclick="editarSlot('${iso}','${s.slotId}')">Editar</button>
+            <button class="btn btn-d btn-sm" onclick="removerSlot('${iso}','${s.slotId}')">Remover</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    html += `<button class="btn btn-g btn-full" style="margin-top:6px;" onclick="fecharModal('modalDia');prepararBloqueio('${iso}')">+ Fechar outro horário nesta data</button>`;
+  }
+  body.innerHTML = html;
+  document.getElementById('modalDia').classList.add('v');
+}
+
+window.prepararBloqueio = function(iso){
+  mostrarTab('agenda');
+  document.getElementById('bloqData').value = iso;
+  document.getElementById('bloqEvento').focus();
+}
+
+window.removerSlot = async function(iso, slotId){
+  if(!confirm(`Remover este horário fechado de ${fdata(iso)}?`)) return;
+  try{
+    await remove(ref(db,'agenda/'+iso+'/'+slotId));
+    fecharModal('modalDia');
+  }catch(e){ alert('Erro ao remover: '+e.message); }
+}
+
+// ---------- Editar slot (data/horário/detalhes) ----------
+window.editarSlot = function(iso, slotId){
+  const raw = agendaCache[iso];
+  const slot = slotsDoDia(raw).find(s=>s.slotId===slotId);
+  if(!slot){ alert('Registro não encontrado.'); return; }
+  const body = document.getElementById('modalDiaBody');
+  body.innerHTML = `
+    <h3>✏️ Editar horário — ${fdata(iso)}</h3>
+    <div class="row2">
+      <div class="field"><label>Data</label><input id="edData" type="date" value="${iso}"></div>
+      <div class="field"><label>Nome do cliente</label><input id="edNome" type="text" value="${(slot.nome||'').replace(/"/g,'&quot;')}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Horário início</label><input id="edHinicio" type="time" value="${slot.hinicio||''}"></div>
+      <div class="field"><label>Horário fim</label><input id="edHfim" type="time" value="${slot.hfim||''}"></div>
+    </div>
+    <div class="field"><label>Evento / motivo</label><input id="edEvento" type="text" value="${(slot.evento||slot.motivo||'').replace(/"/g,'&quot;')}"></div>
+    <div class="row2">
+      <div class="field"><label>Pagantes</label><input id="edPagantes" type="number" value="${slot.pagantes||''}"></div>
+      <div class="field"><label>Valor</label><input id="edValor" type="number" value="${slot.valor||''}"></div>
+    </div>
+    <div class="field"><label>Cardápio</label><input id="edCardapio" type="text" value="${(slot.cardapio||'').replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label>Observações</label><textarea id="edObs">${slot.obs||''}</textarea></div>
+    ${slot.tipo==='contrato' ? `<div class="modal-row" style="color:#888;">Este horário está vinculado a um contrato. A data e o horário do contrato também serão atualizados.</div>` : ''}
+    <button class="btn btn-g btn-full" style="margin-top:8px;" onclick="salvarEdicaoSlot('${iso}','${slotId}','${slot.tipo}','${slot.contratoId||''}')">Salvar alterações</button>
+  `;
+  document.getElementById('modalDia').classList.add('v');
+}
+
+window.salvarEdicaoSlot = async function(isoAntigo, slotId, tipo, contratoId){
+  const novaData = document.getElementById('edData').value;
+  if(!novaData){ alert('Escolha uma data.'); return; }
+  const dados = {
+    tipo: tipo,
+    nome: document.getElementById('edNome').value.trim(),
+    evento: document.getElementById('edEvento').value.trim(),
+    hinicio: document.getElementById('edHinicio').value,
+    hfim: document.getElementById('edHfim').value,
+    pagantes: document.getElementById('edPagantes').value,
+    valor: document.getElementById('edValor').value,
+    cardapio: document.getElementById('edCardapio').value.trim(),
+    obs: document.getElementById('edObs').value.trim(),
+    criadoEm: new Date().toISOString()
+  };
+  if(tipo==='contrato') dados.contratoId = contratoId;
+  if(tipo==='manual') dados.motivo = dados.evento;
+
+  try{
+    if(novaData !== isoAntigo){
+      await remove(ref(db,'agenda/'+isoAntigo+'/'+slotId));
+      await set(ref(db,'agenda/'+novaData+'/'+slotId), dados);
+    } else {
+      await set(ref(db,'agenda/'+novaData+'/'+slotId), dados);
+    }
+    if(tipo==='contrato' && contratoId){
+      await update(ref(db,'contratos/'+contratoId), {
+        data: novaData, hinicio: dados.hinicio, hfim: dados.hfim
+      });
+    }
+    fecharModal('modalDia');
+  }catch(e){ alert('Erro ao salvar: '+e.message); }
+}
+
+// ---------- Fechar horário manual ----------
+window.fecharDataManual = async function(){
+  const data = document.getElementById('bloqData').value;
+  if(!data){ alert('Escolha uma data.'); return; }
+  const hinicio = document.getElementById('bloqHinicio').value;
+  const hfim = document.getElementById('bloqHfim').value;
+  const slotsExistentes = slotsDoDia(agendaCache[data]);
+  const conflito = slotsExistentes.find(s=>horariosConflitam(hinicio,hfim,s.hinicio,s.hfim));
+  if(conflito){
+    const seguir = confirm(`Já existe um horário fechado nesse período (${conflito.hinicio||'?'} às ${conflito.hfim||'?'}). Deseja fechar mesmo assim?`);
+    if(!seguir) return;
+  }
+  try{
+    const novaRef = push(ref(db,'agenda/'+data));
+    await set(novaRef, {
+      tipo:'manual',
+      nome: document.getElementById('bloqNome').value.trim(),
+      evento: document.getElementById('bloqEvento').value.trim(),
+      motivo: document.getElementById('bloqEvento').value.trim() || 'Bloqueio manual',
+      hinicio, hfim,
+      pagantes: document.getElementById('bloqPagantes').value,
+      valor: document.getElementById('bloqValor').value,
+      cardapio: document.getElementById('bloqCardapio').value.trim(),
+      obs: document.getElementById('bloqObs').value.trim(),
+      criadoEm: new Date().toISOString()
+    });
+    ['bloqData','bloqNome','bloqHinicio','bloqHfim','bloqEvento','bloqPagantes','bloqValor','bloqCardapio','bloqObs'].forEach(id=>document.getElementById(id).value='');
+    alert('Horário fechado com sucesso.');
+  }catch(e){ alert('Erro ao fechar data: '+e.message); }
+}
+
+// ---------- Lista de contratos (agrupada por mês, datas crescentes) ----------
+function renderContratos(){
+  const el = document.getElementById('listaContratos');
+  const termo = (document.getElementById('buscaContrato')?.value||'').toLowerCase();
+  const entradas = Object.entries(contratosCache)
+    .filter(([id,d])=>{
+      if(!termo) return true;
+      return (d.nome||'').toLowerCase().includes(termo)
+        || (d.evento||'').toLowerCase().includes(termo)
+        || (d.data||'').includes(termo);
+    })
+    .sort((a,b)=> (a[1].data||'9999-99-99').localeCompare(b[1].data||'9999-99-99'));
+
+  if(entradas.length===0){
+    el.innerHTML = `<div class="empty-state">Nenhum contrato encontrado.</div>`;
+    return;
+  }
+
+  let html = '';
+  let mesAtual = null;
+  entradas.forEach(([id,d])=>{
+    const mesKey = d.data ? d.data.slice(0,7) : 'sem-data';
+    if(mesKey !== mesAtual){
+      mesAtual = mesKey;
+      if(mesKey==='sem-data'){
+        html += `<div class="mes-header">Sem data definida</div>`;
+      } else {
+        const [ano,mes] = mesKey.split('-');
+        html += `<div class="mes-header">${MESES[parseInt(mes,10)-1]} de ${ano}</div>`;
+      }
+    }
+    const status = d.status==='fechado' ? '<span class="tag tag-fechado">Fechado</span>' : '<span class="tag tag-pendente">Pendente</span>';
+    let tagPagto = '';
+    if(d.status==='fechado'){
+      const valorTotal = parseFloat(d.cValor||d.valor)||0;
+      const pago = Object.values(d.pagamentos||{}).reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+      tagPagto = pago>=valorTotal && valorTotal>0 ? '<span class="tag tag-pago">Pago</span>' : '<span class="tag tag-devendo">A receber</span>';
+    }
+    html += `
+      <div class="contrato-item" onclick="abrirContrato('${id}')">
+        <div class="info">
+          <b>${d.nome||'(sem nome)'}</b>
+          <span>${d.evento||'—'} · ${fdata(d.data)}</span>
+        </div>
+        <div class="tagcol">${status}${tagPagto}</div>
+      </div>
+    `;
+  });
+  el.innerHTML = html;
+}
+
+window.abrirContrato = function(id){
+  const d = contratosCache[id];
+  if(!d){ alert('Contrato não encontrado.'); return; }
+  const body = document.getElementById('modalContratoBody');
+  const status = d.status==='fechado' ? '<span class="tag tag-fechado">Fechado</span>' : '<span class="tag tag-pendente">Pendente</span>';
+  const link = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}${ARQUIVO_CONTRATO}?id=${id}`;
+
+  let pagamentosHtml = '';
+  if(d.status==='fechado'){
+    const valorTotal = parseFloat(d.cValor||d.valor)||0;
+    const pagamentos = Object.entries(d.pagamentos||{}).sort((a,b)=>(a[1].data||'').localeCompare(b[1].data||''));
+    const totalPago = pagamentos.reduce((s,[,p])=>s+(parseFloat(p.valor)||0),0);
+    const saldo = valorTotal - totalPago;
+    pagamentosHtml = `
+      <div class="modal-sec">Pagamentos</div>
+      <div class="modal-row"><b>Valor total:</b> ${fval(valorTotal)}</div>
+      <div class="modal-row"><b>Valor pago:</b> ${fval(totalPago)}</div>
+      <div class="modal-row"><b>Saldo pendente:</b> ${saldo>0 ? fval(saldo) : 'Quitado ✅'}</div>
+      ${pagamentos.length>0 ? pagamentos.map(([,p])=>`<div class="pagto-hist"><span>${p.data?new Date(p.data).toLocaleDateString('pt-BR'):'—'}</span><span>${fval(p.valor)}</span></div>`).join('') : ''}
+      <div class="row2" style="margin-top:8px;">
+        <div class="field" style="margin-bottom:0;"><input id="pagValor" type="number" placeholder="Valor recebido"></div>
+        <button class="btn btn-g btn-sm" onclick="registrarPagamento('${id}')">Registrar pagamento Pix</button>
+      </div>
+    `;
+  }
+
+  body.innerHTML = `
+    <h3>${d.nome||'(sem nome)'} ${status}</h3>
+
+    <div class="modal-sec">Dados do cliente</div>
+    <div class="modal-row"><b>CPF / RG:</b> ${d.cpf||'—'} / ${d.rg||'—'}</div>
+    <div class="modal-row"><b>Endereço:</b> ${d.rua||'—'}, ${d.bairro||'—'} — ${d.cidade||'—'}/${d.estado||'—'} — ${d.cep||'—'}</div>
+    <div class="modal-row"><b>Telefone:</b> ${d.tel||'—'}</div>
+
+    <div class="modal-sec">Evento</div>
+    <div class="modal-row"><b>Tipo:</b> ${d.evento||'—'}</div>
+    <div class="modal-row"><b>Aniversariante:</b> ${d.anivNome||'—'} (${d.anivIdade||'—'} anos)</div>
+    <div class="modal-row"><b>Data:</b> ${fdata(d.data)}</div>
+    <div class="modal-row"><b>Horário:</b> ${d.hinicio||'—'} às ${d.hfim||'—'}</div>
+    <div class="modal-row"><b>Pagantes:</b> ${d.pagantes||'—'}</div>
+
+    <div class="modal-sec">Cardápio e decoração</div>
+    <div class="modal-row"><b>Cardápio:</b> ${d.cardapio||'—'}</div>
+    <div class="modal-row"><b>Decoração inclusa:</b> ${d.decInc?'Sim':'Não'} ${d.decDesc?('— '+d.decDesc):''}</div>
+
+    <div class="modal-sec">Pagamento (contrato)</div>
+    <div class="modal-row"><b>Valor (cliente):</b> ${fval(d.valor)}</div>
+    <div class="modal-row"><b>Condições:</b> ${d.pagto||'—'}</div>
+    ${d.status==='fechado' ? `
+      <div class="modal-row"><b>Valor final:</b> ${fval(d.cValor)}</div>
+      <div class="modal-row"><b>Valor/pagante (até limite):</b> ${fval(d.cVp1)}</div>
+      <div class="modal-row"><b>Valor/pagante (após limite):</b> ${fval(d.cVp2)}</div>
+      <div class="modal-row"><b>Data limite:</b> ${fdata(d.cDlimite)}</div>
+      <div class="modal-row"><b>Fechado em:</b> ${d.fechadoEm ? new Date(d.fechadoEm).toLocaleString('pt-BR') : '—'}</div>
+    ` : ''}
+
+    ${pagamentosHtml}
+
+    ${d.obs ? `<div class="modal-sec">Observações</div><div class="modal-row">${d.obs}</div>` : ''}
+
+    <div class="modal-sec">Link do contrato</div>
+    <div class="link-box">
+      <input type="text" readonly value="${link}" onclick="this.select()">
+      <button class="btn btn-s" onclick="navigator.clipboard.writeText('${link}');this.textContent='Copiado!'">Copiar</button>
+    </div>
+
+    ${d.status!=='fechado' ? `
+      <div class="modal-sec">Contrato já foi finalizado?</div>
+      <div class="modal-row" style="color:#888;">Contratos fechados antes da atualização do painel ficam marcados como "pendente" porque essa informação não existia no sistema antigo. Se este contrato já foi assinado e concluído, marque-o abaixo.</div>
+      <button class="btn btn-g btn-full" style="margin-top:8px;" onclick="marcarComoFechado('${id}')">Marcar como fechado e travar a data</button>
+    ` : ''}
+  `;
+  document.getElementById('modalContrato').classList.add('v');
+}
+
+window.registrarPagamento = async function(id){
+  const input = document.getElementById('pagValor');
+  const valor = parseFloat(input.value);
+  if(!valor || valor<=0){ alert('Informe um valor válido.'); return; }
+  try{
+    const novaRef = push(ref(db,'contratos/'+id+'/pagamentos'));
+    await set(novaRef, { valor, data: new Date().toISOString() });
+    abrirContrato(id);
+  }catch(e){ alert('Erro ao registrar pagamento: '+e.message); }
+}
+
+window.marcarComoFechado = async function(id){
+  const d = contratosCache[id];
+  if(!d){ alert('Contrato não encontrado.'); return; }
+  if(!d.data){ alert('Este contrato não possui data cadastrada, não é possível travar a agenda.'); return; }
+  const slotsExistentes = slotsDoDia(agendaCache[d.data]).filter(s=>s.slotId!==id);
+  const conflito = slotsExistentes.find(s=>horariosConflitam(d.hinicio,d.hfim,s.hinicio,s.hfim));
+  if(conflito){
+    const seguir = confirm(`Atenção: já existe um horário fechado em ${fdata(d.data)} (${conflito.hinicio||'?'} às ${conflito.hfim||'?'}) que conflita com este contrato.\n\nDeseja continuar e travar mesmo assim?`);
+    if(!seguir) return;
+  }
+  try{
+    await set(ref(db,'agenda/'+d.data+'/'+id), {
+      tipo: 'contrato', contratoId: id,
+      nome: d.nome||'', evento: d.evento||'', hinicio: d.hinicio||'', hfim: d.hfim||'',
+      pagantes: d.pagantes||'', cardapio: d.cardapio||'',
+      criadoEm: new Date().toISOString()
+    });
+    await update(ref(db,'contratos/'+id), {
+      status:'fechado', fechadoEm: d.fechadoEm || new Date().toISOString()
+    });
+    fecharModal('modalContrato');
+    alert('Contrato marcado como fechado e horário travado na agenda.');
+  }catch(e){ alert('Erro ao atualizar: '+e.message); }
+}
+
+window.fecharModal = function(id){
+  document.getElementById(id).classList.remove('v');
+}
+
+// ---------- Relatório por período ----------
+window.gerarResumoPeriodo = function(){
+  const de = document.getElementById('relDe').value;
+  const ate = document.getElementById('relAte').value;
+  const el = document.getElementById('resumoPeriodo');
+  if(!de || !ate){ alert('Escolha as duas datas.'); return; }
+  if(de > ate){ alert('A data inicial deve ser antes da data final.'); return; }
+
+  const filtrados = Object.values(contratosCache)
+    .filter(d=> d.data && d.data>=de && d.data<=ate)
+    .sort((a,b)=> a.data.localeCompare(b.data));
+
+  const fechados = filtrados.filter(d=>d.status==='fechado');
+  const pendentes = filtrados.filter(d=>d.status!=='fechado');
+  const faturamento = fechados.reduce((s,d)=>s+(parseFloat(d.cValor||d.valor)||0),0);
+
+  let html = `
+    <div class="resumo-cards">
+      <div class="resumo-card"><div class="num">${filtrados.length}</div><div class="lbl">Festas no período</div></div>
+      <div class="resumo-card"><div class="num">${fval(faturamento)}</div><div class="lbl">Faturamento (fechados)</div></div>
+    </div>
+    <div class="modal-row"><b>Fechados:</b> ${fechados.length} &nbsp; <b>Pendentes:</b> ${pendentes.length}</div>
+    <div class="sec">Cardápios do período</div>
+  `;
+  if(filtrados.length===0){
+    html += `<div class="empty-state">Nenhuma festa encontrada nesse período.</div>`;
+  } else {
+    html += filtrados.map(d=>`
+      <div class="resumo-periodo-item">
+        <b>${fdata(d.data)} — ${d.nome||'—'} (${d.evento||'—'})</b>
+        <span>${d.cardapio||'Cardápio não informado'}</span>
+      </div>
+    `).join('');
+  }
+  el.innerHTML = html;
+}
+</script>
+</body>
+</html>
